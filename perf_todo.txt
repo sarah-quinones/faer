@@ -1,0 +1,25 @@
+measurements on x86-64 haswell, clang
+
+blaze matrix-matrix faster for medium matrices.
+from [8×8]×[8×8] to [32×32]×[32×32] for square matrices
+
+--------------------------------------------------------------------------------
+
+R: row major
+C: col major
+
+CR: [2×2]×[2×8] blaze 25% faster
+    [8×6]×[6×6] blaze 35% faster
+
+
+RC: [2×8]×[8×3] eigen 30% faster
+                blaze 40% faster
+
+    [2×16]×[16×3] blaze 85% faster
+
+    [3×8]×[8×3] eigen 20% faster
+                blaze 20% faster
+
+    [3×16]×[16×3] blaze 100% faster
+
+    maybe consider horizontal reductions?

@@ -1,0 +1,6 @@
+[submodule "external/veg"]
+	path = external/veg
+	url = https://github.com/kitegi/veg
+[submodule "external/simde"]
+	path = external/simde
+	url = https://github.com/simd-everywhere/simde
