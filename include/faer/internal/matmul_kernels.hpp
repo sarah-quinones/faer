@@ -7,6 +7,7 @@
 
 namespace fae {
 namespace _detail {
+namespace _kernel {
 template <typename T, usize N>
 struct KernelIterLoadLhs {
 	T const* packed_lhs_iter;
@@ -106,6 +107,7 @@ struct DestUpdateOuter {
 		});
 	}
 };
+} // namespace _kernel
 } // namespace _detail
 
 namespace simd {
@@ -126,7 +128,7 @@ VEG_NO_INLINE void packed_inner_kernel(
 	isize dest_stride_bytes = dest_stride * isize{sizeof(T)};
 
 	Pack accum[NR * (MR / N)];
-	_detail::unroll<NR*(MR / N)>(_detail::ZeroAccum<T, N>{accum});
+	_detail::unroll<NR*(MR / N)>(_detail::_kernel::ZeroAccum<T, N>{accum});
 
 	Pack lhs[MR / N];
 	Pack rhs;
@@ -138,7 +140,7 @@ VEG_NO_INLINE void packed_inner_kernel(
 	if (depth != 0) {
 		FAER_NO_UNROLL
 		while (true) {
-			_detail::unroll<K_UNROLL>(_detail::KernelIter<T, N, MR, NR>{
+			_detail::unroll<K_UNROLL>(_detail::_kernel::KernelIter<T, N, MR, NR>{
 					packed_lhs,
 					lhs_stride_bytes,
 					packed_rhs,
@@ -163,7 +165,7 @@ VEG_NO_INLINE void packed_inner_kernel(
 		if (depth != 0) {
 			FAER_NO_UNROLL
 			while (true) {
-				_detail::unroll<1>(_detail::KernelIter<T, N, MR, NR>{
+				_detail::unroll<1>(_detail::_kernel::KernelIter<T, N, MR, NR>{
 						packed_lhs,
 						lhs_stride_bytes,
 						packed_rhs,
@@ -182,7 +184,7 @@ VEG_NO_INLINE void packed_inner_kernel(
 			}
 		}
 	}
-	_detail::unroll<MR / N>(_detail::DestUpdateOuter<T, N, NR>{
+	_detail::unroll<MR / N>(_detail::_kernel::DestUpdateOuter<T, N, NR>{
 			accum,
 			dest,
 			dest_stride_bytes,

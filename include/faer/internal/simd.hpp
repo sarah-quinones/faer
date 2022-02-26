@@ -38,6 +38,7 @@ struct Pack<f32, 1> {
 	VEG_INLINE void load_aligned(f32 const* ptr) noexcept { _ = simde_mm_load_ss(ptr); }
 	VEG_INLINE void store_unaligned(f32* ptr) const noexcept { simde_mm_store_ss(ptr, _); }
 	VEG_INLINE void store_aligned(f32* ptr) const noexcept { simde_mm_store_ss(ptr, _); }
+	VEG_NODISCARD VEG_INLINE auto cast_unit() const noexcept -> Pack<f32, 1> { return *this; }
 
 	VEG_INLINE void add(P lhs, P rhs) noexcept { _ = simde_mm_add_ss(lhs._, rhs._); }
 	VEG_INLINE void sub(P lhs, P rhs) noexcept { _ = simde_mm_sub_ss(lhs._, rhs._); }
@@ -66,6 +67,7 @@ struct Pack<f32, 2> {
 	VEG_INLINE void store_aligned(f32* ptr) const noexcept {
 		simde_mm_store_sd(reinterpret_cast<f64*>(ptr), simde_mm_castps_pd(_));
 	}
+	VEG_NODISCARD VEG_INLINE auto cast_unit() const noexcept -> Pack<f32, 1> { return {_}; }
 
 	VEG_INLINE void add(P lhs, P rhs) noexcept { _ = simde_mm_add_ps(lhs._, rhs._); }
 	VEG_INLINE void sub(P lhs, P rhs) noexcept { _ = simde_mm_sub_ps(lhs._, rhs._); }
@@ -96,6 +98,7 @@ struct Pack<f32, 4> {
 	VEG_INLINE void load_aligned(f32 const* ptr) noexcept { _ = simde_mm_load_ps(ptr); }
 	VEG_INLINE void store_unaligned(f32* ptr) const noexcept { simde_mm_storeu_ps(ptr, _); }
 	VEG_INLINE void store_aligned(f32* ptr) const noexcept { simde_mm_store_ps(ptr, _); }
+	VEG_NODISCARD VEG_INLINE auto cast_unit() const noexcept -> Pack<f32, 1> { return {_}; }
 
 	VEG_INLINE void add(P lhs, P rhs) noexcept { _ = simde_mm_add_ps(lhs._, rhs._); }
 	VEG_INLINE void sub(P lhs, P rhs) noexcept { _ = simde_mm_sub_ps(lhs._, rhs._); }
@@ -120,6 +123,7 @@ struct Pack<f32, 8> {
 	VEG_INLINE void load_aligned(f32 const* ptr) noexcept { _ = simde_mm256_load_ps(ptr); }
 	VEG_INLINE void store_unaligned(f32* ptr) const noexcept { simde_mm256_storeu_ps(ptr, _); }
 	VEG_INLINE void store_aligned(f32* ptr) const noexcept { simde_mm256_store_ps(ptr, _); }
+	VEG_NODISCARD VEG_INLINE auto cast_unit() const noexcept -> Pack<f32, 1> { return {simde_mm256_castps256_ps128(_)}; }
 
 	VEG_INLINE void add(P lhs, P rhs) noexcept { _ = simde_mm256_add_ps(lhs._, rhs._); }
 	VEG_INLINE void sub(P lhs, P rhs) noexcept { _ = simde_mm256_sub_ps(lhs._, rhs._); }
@@ -168,6 +172,7 @@ struct Pack<f32, 16> {
 	VEG_INLINE void load_aligned(f32 const* ptr) noexcept { _ = _mm512_load_ps(ptr); }
 	VEG_INLINE void store_unaligned(f32* ptr) const noexcept { _mm512_storeu_ps(ptr, _); }
 	VEG_INLINE void store_aligned(f32* ptr) const noexcept { _mm512_store_ps(ptr, _); }
+	VEG_NODISCARD VEG_INLINE auto cast_unit() const noexcept -> Pack<f32, 1> { return {_mm512_castps512_ps128(_)}; }
 
 	VEG_INLINE void add(P lhs, P rhs) noexcept { _ = _mm512_add_ps(lhs._, rhs._); }
 	VEG_INLINE void sub(P lhs, P rhs) noexcept { _ = _mm512_sub_ps(lhs._, rhs._); }
@@ -192,6 +197,7 @@ struct Pack<f64, 1> {
 	VEG_INLINE void load_aligned(f64 const* ptr) noexcept { _ = simde_mm_load_sd(ptr); }
 	VEG_INLINE void store_unaligned(f64* ptr) const noexcept { simde_mm_store_sd(ptr, _); }
 	VEG_INLINE void store_aligned(f64* ptr) const noexcept { simde_mm_store_sd(ptr, _); }
+	VEG_NODISCARD VEG_INLINE auto cast_unit() const noexcept -> Pack<f64, 1> { return *this; }
 
 	VEG_INLINE void add(Pack lhs, Pack rhs) noexcept { _ = simde_mm_add_sd(lhs._, rhs._); }
 	VEG_INLINE void sub(Pack lhs, Pack rhs) noexcept { _ = simde_mm_sub_sd(lhs._, rhs._); }
@@ -214,6 +220,7 @@ struct Pack<f64, 2> {
 	VEG_INLINE void load_aligned(f64 const* ptr) noexcept { _ = simde_mm_load_pd(ptr); }
 	VEG_INLINE void store_unaligned(f64* ptr) const noexcept { simde_mm_storeu_pd(ptr, _); }
 	VEG_INLINE void store_aligned(f64* ptr) const noexcept { simde_mm_store_pd(ptr, _); }
+	VEG_NODISCARD VEG_INLINE auto cast_unit() const noexcept -> Pack<f64, 1> { return {_}; }
 
 	VEG_INLINE void add(Pack lhs, Pack rhs) noexcept { _ = simde_mm_add_pd(lhs._, rhs._); }
 	VEG_INLINE void sub(Pack lhs, Pack rhs) noexcept { _ = simde_mm_sub_pd(lhs._, rhs._); }
@@ -240,6 +247,7 @@ struct Pack<f64, 4> {
 	VEG_INLINE void load_aligned(f64 const* ptr) noexcept { _ = simde_mm256_load_pd(ptr); }
 	VEG_INLINE void store_unaligned(f64* ptr) const noexcept { simde_mm256_storeu_pd(ptr, _); }
 	VEG_INLINE void store_aligned(f64* ptr) const noexcept { simde_mm256_store_pd(ptr, _); }
+	VEG_NODISCARD VEG_INLINE auto cast_unit() const noexcept -> Pack<f64, 1> { return {simde_mm256_castpd256_pd128(_)}; }
 
 	VEG_INLINE void add(Pack lhs, Pack rhs) noexcept { _ = simde_mm256_add_pd(lhs._, rhs._); }
 	VEG_INLINE void sub(Pack lhs, Pack rhs) noexcept { _ = simde_mm256_sub_pd(lhs._, rhs._); }
@@ -273,6 +281,7 @@ struct Pack<f64, 8> {
 	VEG_INLINE void load_aligned(f64 const* ptr) noexcept { _ = _mm512_load_pd(ptr); }
 	VEG_INLINE void store_unaligned(f64* ptr) const noexcept { _mm512_storeu_pd(ptr, _); }
 	VEG_INLINE void store_aligned(f64* ptr) const noexcept { _mm512_store_pd(ptr, _); }
+	VEG_NODISCARD VEG_INLINE auto cast_unit() const noexcept -> Pack<f64, 1> { return {_mm512_castpd512_pd128(_)}; }
 
 	VEG_INLINE void add(Pack lhs, Pack rhs) noexcept { _ = _mm512_add_pd(lhs._, rhs._); }
 	VEG_INLINE void sub(Pack lhs, Pack rhs) noexcept { _ = _mm512_sub_pd(lhs._, rhs._); }

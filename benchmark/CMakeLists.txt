@@ -30,3 +30,6 @@ endif()
 
 add_executable(bench.matmul.large src/matmul_large.cpp)
 target_link_libraries(bench.matmul.large faer_bench bench_backward_cpp_main)
+
+add_executable(bench.matvec.large src/matvec_large.cpp)
+target_link_libraries(bench.matvec.large faer_bench bench_backward_cpp_main)
