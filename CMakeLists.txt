@@ -12,8 +12,8 @@ endif()
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 add_library(
-  faer ${CMAKE_CURRENT_SOURCE_DIR}/src/query_cache.cpp
-       ${CMAKE_CURRENT_SOURCE_DIR}/src/matmul.cpp
+  faer ${CMAKE_CURRENT_SOURCE_DIR}/src/null.cpp
+       ${CMAKE_CURRENT_SOURCE_DIR}/src/cache.cpp
 )
 if((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL
                                                 "GNU")
@@ -22,13 +22,15 @@ if((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL
 endif()
 
 target_include_directories(faer PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
 target_include_directories(
   faer SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/simde
 )
-add_subdirectory(external/veg)
 
-target_link_libraries(faer PUBLIC veg)
+add_subdirectory(external/veg)
+set(BUILD_TESTING OFF)
+add_subdirectory(external/cpu_features)
+
+target_link_libraries(faer PUBLIC veg cpu_features)
 
 option(FAER_ENABLE_TESTING "enable tests" ${FAER_TOP_LEVEL})
 option(FAER_ENABLE_BENCHMARKS "enable benchmarks" ${FAER_TOP_LEVEL})

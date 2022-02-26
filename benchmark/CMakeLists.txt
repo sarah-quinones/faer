@@ -6,7 +6,7 @@ set(CONAN_REQUIRES
     eigen/3.3.9
     blaze/3.8
     backward-cpp/1.5
-    benchmark/1.5.2
+    benchmark/1.6.0
 )
 set(CONAN_OPTIONS)
 run_conan()
@@ -28,25 +28,5 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   target_compile_options(faer_bench PUBLIC -ftime-trace)
 endif()
 
-add_executable(bench.matrix.mul.large src/matrix_mul_large.cpp)
-target_link_libraries(bench.matrix.mul.large faer_bench bench_backward_cpp_main)
-
-add_executable(bench.matrix.mul.small.cc src/matrix_mul_small_cc.cpp)
-target_link_libraries(
-  bench.matrix.mul.small.cc faer_bench bench_backward_cpp_main
-)
-
-add_executable(bench.matrix.mul.small.cr src/matrix_mul_small_cr.cpp)
-target_link_libraries(
-  bench.matrix.mul.small.cr faer_bench bench_backward_cpp_main
-)
-
-add_executable(bench.matrix.mul.small.rc src/matrix_mul_small_rc.cpp)
-target_link_libraries(
-  bench.matrix.mul.small.rc faer_bench bench_backward_cpp_main
-)
-
-add_executable(bench.matrix.mul.small.rr src/matrix_mul_small_rr.cpp)
-target_link_libraries(
-  bench.matrix.mul.small.rr faer_bench bench_backward_cpp_main
-)
+add_executable(bench.matmul.large src/matmul_large.cpp)
+target_link_libraries(bench.matmul.large faer_bench bench_backward_cpp_main)

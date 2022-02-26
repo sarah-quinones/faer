@@ -4,3 +4,6 @@
 [submodule "external/simde"]
 	path = external/simde
 	url = https://github.com/simd-everywhere/simde
+[submodule "external/cpu_features"]
+	path = external/cpu_features
+	url = https://github.com/google/cpu_features

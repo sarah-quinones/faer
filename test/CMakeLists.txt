@@ -43,16 +43,10 @@ add_library(backward_cpp_main OBJECT src/backward.cpp)
 target_link_libraries(backward_cpp_main CONAN_PKG::backward-cpp)
 
 add_executable(test.matrix.mul src/matrix_mul.cpp)
-add_executable(test.expr.linear src/linear_expr.cpp)
 
 target_link_libraries(
   test.matrix.mul
   faer_tests
   backward_cpp_main
   doctest_main
-)
-target_link_libraries(
-  test.expr.linear
-  faer_tests
-  backward_cpp_main
 )
