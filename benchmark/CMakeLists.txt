@@ -2,10 +2,9 @@ target_compile_options(faer PUBLIC "-march=native")
 
 # Conan dependencies
 set(CONAN_REQUIRES
-    fmt/7.1.2
-    eigen/3.3.9
-    blaze/3.8
-    backward-cpp/1.5
+    fmt/8.1.1
+    eigen/3.4.0
+    backward-cpp/1.6
     benchmark/1.6.0
 )
 set(CONAN_OPTIONS)
@@ -21,7 +20,6 @@ target_link_libraries(
          CONAN_PKG::benchmark
          CONAN_PKG::fmt
          CONAN_PKG::eigen
-         CONAN_PKG::blaze
 )
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

@@ -21,10 +21,9 @@ include_directories(include)
 
 # Conan dependencies
 set(CONAN_REQUIRES
-    fmt/8.0.0
-    eigen/3.3.9
-    blaze/3.8
-    backward-cpp/1.5
+    fmt/8.1.1
+    eigen/3.4.0
+    backward-cpp/1.6
 )
 set(CONAN_OPTIONS)
 run_conan()
@@ -34,7 +33,6 @@ target_link_libraries(
   PUBLIC faer
          CONAN_PKG::fmt
          CONAN_PKG::eigen
-         CONAN_PKG::blaze
 )
 target_compile_options(faer_tests PUBLIC -fmessage-length=100)
 

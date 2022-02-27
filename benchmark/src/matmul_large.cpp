@@ -14,8 +14,8 @@ auto random_mat(usize m, usize n) {
 	return mat;
 }
 constexpr usize N = 4;
-constexpr usize MR = 8;
-constexpr usize NR = 6;
+constexpr usize MR = 12;
+constexpr usize NR = 4;
 
 usize m = _detail::round_up(4096, MR);
 usize n = _detail::round_up(4096, NR);
@@ -32,7 +32,6 @@ void bm_eigen(benchmark::State& s) {
 	for (auto _ : s) {
 		dest.noalias() += lhs * rhs;
 	}
-	veg::dbg(dest.norm());
 	std::cout << dest.norm() << '\n';
 }
 
@@ -60,7 +59,6 @@ void bm_faer_(benchmark::State& s) {
 				rhs.outerStride(),
 				stack);
 	}
-	veg::dbg(dest.norm());
 	std::cout << dest.norm() << '\n';
 }
 

@@ -21,7 +21,7 @@ macro(run_conan)
     NAME
     conan-center
     URL
-    https://conan.bintray.com
+    https://center.conan.io
   )
   conan_add_remote(
     COMMAND
@@ -29,7 +29,7 @@ macro(run_conan)
     NAME
     bincrafters
     URL
-    https://api.bintray.com/conan/bincrafters/public-conan
+    https://bincrafters.jfrog.io/artifactory/api/conan/public-conan
   )
 
   option(CONAN_QUIET "Suppress Conan output" OFF)
