@@ -91,11 +91,11 @@ FAER_MINSIZE void matmul_large_vectorized( //
 					for (usize row_inner = 0; row_inner < m_chunk; row_inner += MR) {
 						simd::packed_inner_kernel<MR, NR, N>(
 								MemAccess<Order::COLMAJOR>::fn(dest, row_outer + row_inner, col_outer + col_inner, dest_stride),
-								dest_stride,
+								dest_stride * isize{sizeof(T)},
 								packed_lhs + row_inner * kc,
-								MR,
+								MR * isize{sizeof(T)},
 								packed_rhs + col_inner * kc,
-								NR,
+								NR * isize{sizeof(T)},
 								k_chunk);
 					}
 				}

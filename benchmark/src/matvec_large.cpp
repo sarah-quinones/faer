@@ -21,9 +21,9 @@ auto random_vec(usize k) {
 	return mat;
 }
 
-constexpr usize N = 4;
+constexpr usize N = 8;
 
-usize m = 4097;
+usize m = 4053;
 usize k = 4096;
 
 template <typename T>
@@ -37,7 +37,7 @@ void bm_eigen(benchmark::State& s) {
 	for (auto _ : s) {
 		dest.noalias() += 2.0 * lhs * rhs;
 	}
-	veg::dbg(dest.norm());
+	std::cout << dest.norm() << '\n';
 }
 
 template <typename T>
@@ -57,9 +57,9 @@ void bm_faer_(benchmark::State& s) {
 				lhs.outerStride(),
 				2);
 	}
-	veg::dbg(dest.norm());
+	std::cout << dest.norm() << '\n';
 }
 
-BENCHMARK_TEMPLATE(bm_faer_, f64);
 BENCHMARK_TEMPLATE(bm_eigen, f64);
+BENCHMARK_TEMPLATE(bm_faer_, f64);
 BENCHMARK_MAIN();

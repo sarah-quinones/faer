@@ -48,6 +48,7 @@ struct Pack<f32, 1> {
 	VEG_INLINE void fmadd(Neg, Pos, P lhs, P rhs, P accum) noexcept { _ = simde_mm_fnmadd_ss(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Pos, Neg, P lhs, P rhs, P accum) noexcept { _ = simde_mm_fmsub_ss(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Neg, Neg, P lhs, P rhs, P accum) noexcept { _ = simde_mm_fnmsub_ss(lhs._, rhs._, accum._); }
+	VEG_NODISCARD VEG_INLINE auto horizontal_add() const noexcept -> f32 { return simde_mm_cvtss_f32(_); }
 	VEG_INLINE static void trans(Pack* /*p*/) noexcept {}
 };
 template <>
@@ -77,6 +78,12 @@ struct Pack<f32, 2> {
 	VEG_INLINE void fmadd(Neg, Pos, P lhs, P rhs, P accum) noexcept { _ = simde_mm_fnmadd_ps(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Pos, Neg, P lhs, P rhs, P accum) noexcept { _ = simde_mm_fmsub_ps(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Neg, Neg, P lhs, P rhs, P accum) noexcept { _ = simde_mm_fnmsub_ps(lhs._, rhs._, accum._); }
+	VEG_NODISCARD VEG_INLINE auto horizontal_add() const noexcept {
+		simde__m128 _0_1_0_1 = _;
+		simde__m128 _1_1_1_1 = simde_mm_movehdup_ps(_0_1_0_1);
+		simde__m128 _01_x_x_x = simde_mm_add_ss(_0_1_0_1, _1_1_1_1);
+		return simde_mm_cvtss_f32(_01_x_x_x);
+	}
 	VEG_INLINE static void trans(Pack* p) noexcept {
 		simde__m128 p0 = p[0]._;
 		simde__m128 p1 = p[1]._;
@@ -108,6 +115,14 @@ struct Pack<f32, 4> {
 	VEG_INLINE void fmadd(Neg, Pos, P lhs, P rhs, P accum) noexcept { _ = simde_mm_fnmadd_ps(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Pos, Neg, P lhs, P rhs, P accum) noexcept { _ = simde_mm_fmsub_ps(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Neg, Neg, P lhs, P rhs, P accum) noexcept { _ = simde_mm_fnmsub_ps(lhs._, rhs._, accum._); }
+	VEG_NODISCARD VEG_INLINE auto horizontal_add() const noexcept {
+		simde__m128 _0_1_2_3 = _;
+		simde__m128 _1_1_3_3 = simde_mm_movehdup_ps(_0_1_2_3);
+		simde__m128 _01_x_23_x = simde_mm_add_ps(_0_1_2_3, _1_1_3_3);
+		simde__m128 _23_x_xx_x = simde_mm_movehl_ps(_1_1_3_3, _01_x_23_x);
+		simde__m128 _0123_x_x_x = simde_mm_add_ss(_01_x_23_x, _23_x_xx_x);
+		return simde_mm_cvtss_f32(_0123_x_x_x);
+	}
 	VEG_INLINE static void trans(Pack* p) noexcept {
 		SIMDE_MM_TRANSPOSE4_PS /* NOLINT */ (p[0]._, p[1]._, p[2]._, p[3]._);
 	}
@@ -133,6 +148,12 @@ struct Pack<f32, 8> {
 	VEG_INLINE void fmadd(Neg, Pos, P lhs, P rhs, P accum) noexcept { _ = simde_mm256_fnmadd_ps(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Pos, Neg, P lhs, P rhs, P accum) noexcept { _ = simde_mm256_fmsub_ps(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Neg, Neg, P lhs, P rhs, P accum) noexcept { _ = simde_mm256_fnmsub_ps(lhs._, rhs._, accum._); }
+	VEG_NODISCARD VEG_INLINE auto horizontal_add() const noexcept -> f32 {
+		Pack<f32, 4> lo = {simde_mm256_castps256_ps128(_)};
+		Pack<f32, 4> hi = {simde_mm256_extractf128_ps(_, 1)};
+		lo.add(lo, hi);
+		return lo.horizontal_add();
+	}
 	VEG_INLINE static void trans(Pack* p) noexcept {
 		simde__m256 T0 = simde_mm256_unpacklo_ps(p[0]._, p[1]._);
 		simde__m256 T1 = simde_mm256_unpackhi_ps(p[0]._, p[1]._);
@@ -182,6 +203,12 @@ struct Pack<f32, 16> {
 	VEG_INLINE void fmadd(Neg, Pos, P lhs, P rhs, P accum) noexcept { _ = _mm512_fnmadd_ps(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Pos, Neg, P lhs, P rhs, P accum) noexcept { _ = _mm512_fmsub_ps(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Neg, Neg, P lhs, P rhs, P accum) noexcept { _ = _mm512_fnmsub_ps(lhs._, rhs._, accum._); }
+	VEG_NODISCARD VEG_INLINE auto horizontal_add() const noexcept -> f32 {
+		Pack<f32, 8> lo = {_mm512_castps512_ps256(_)};
+		Pack<f32, 8> hi = {_mm512_extractf32x8_ps(_, 1)};
+		lo.add(lo, hi);
+		return lo.horizontal_add();
+	}
 	VEG_INLINE static void trans(Pack* /*p*/) noexcept { VEG_UNIMPLEMENTED(); }
 };
 #endif
@@ -207,6 +234,7 @@ struct Pack<f64, 1> {
 	VEG_INLINE void fmadd(Neg, Pos, P lhs, P rhs, P accum) noexcept { _ = simde_mm_fnmadd_sd(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Pos, Neg, P lhs, P rhs, P accum) noexcept { _ = simde_mm_fmsub_sd(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Neg, Neg, P lhs, P rhs, P accum) noexcept { _ = simde_mm_fnmsub_sd(lhs._, rhs._, accum._); }
+	VEG_NODISCARD VEG_INLINE auto horizontal_add() const noexcept -> f64 { return simde_mm_cvtsd_f64(_); }
 	VEG_INLINE static void trans(Pack* /*p*/) noexcept {}
 };
 template <>
@@ -230,6 +258,11 @@ struct Pack<f64, 2> {
 	VEG_INLINE void fmadd(Neg, Pos, P lhs, P rhs, P accum) noexcept { _ = simde_mm_fnmadd_pd(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Pos, Neg, P lhs, P rhs, P accum) noexcept { _ = simde_mm_fmsub_pd(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Neg, Neg, P lhs, P rhs, P accum) noexcept { _ = simde_mm_fnmsub_pd(lhs._, rhs._, accum._); }
+	VEG_NODISCARD VEG_INLINE auto horizontal_add() const noexcept -> f64 {
+		simde__m128d lo = _;
+		simde__m128d hi = simde_mm_castps_pd(simde_mm_movehl_ps(simde_mm_undefined_ps(), simde_mm_castpd_ps(_)));
+		return simde_mm_cvtsd_f64(simde_mm_add_sd(lo, hi));
+	}
 	VEG_INLINE static void trans(Pack* p) noexcept {
 		simde__m128d tmp = simde_mm_unpackhi_pd(p[0]._, p[1]._);
 		p[0]._ = simde_mm_unpacklo_pd(p[0]._, p[1]._);
@@ -257,6 +290,12 @@ struct Pack<f64, 4> {
 	VEG_INLINE void fmadd(Neg, Pos, P lhs, P rhs, P accum) noexcept { _ = simde_mm256_fnmadd_pd(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Pos, Neg, P lhs, P rhs, P accum) noexcept { _ = simde_mm256_fmsub_pd(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Neg, Neg, P lhs, P rhs, P accum) noexcept { _ = simde_mm256_fnmsub_pd(lhs._, rhs._, accum._); }
+	VEG_NODISCARD auto horizontal_add() const noexcept -> f64 {
+		Pack<f64, 2> lo = {simde_mm256_castpd256_pd128(_)};
+		Pack<f64, 2> hi = {simde_mm256_extractf128_pd(_, 1)};
+		lo.add(lo, hi);
+		return lo.horizontal_add();
+	}
 	VEG_INLINE static void trans(Pack* p) noexcept {
 		simde__m256d T0 = simde_mm256_shuffle_pd(p[0]._, p[1]._, 0xF);
 		simde__m256d T1 = simde_mm256_shuffle_pd(p[0]._, p[1]._, 0x0);
@@ -291,6 +330,12 @@ struct Pack<f64, 8> {
 	VEG_INLINE void fmadd(Neg, Pos, P lhs, P rhs, P accum) noexcept { _ = _mm512_fnmadd_pd(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Pos, Neg, P lhs, P rhs, P accum) noexcept { _ = _mm512_fmsub_pd(lhs._, rhs._, accum._); }
 	VEG_INLINE void fmadd(Neg, Neg, P lhs, P rhs, P accum) noexcept { _ = _mm512_fnmsub_pd(lhs._, rhs._, accum._); }
+	VEG_NODISCARD auto horizontal_add() const noexcept -> f64 {
+		Pack<f64, 4> lo = {_mm512_castpd512_pd256(_)};
+		Pack<f64, 4> hi = {_mm512_extractf64x4_pd(_, 1)};
+		lo.add(lo, hi);
+		return lo.horizontal_add();
+	}
 	VEG_INLINE static void trans(Pack* /*p*/) noexcept { VEG_UNIMPLEMENTED(); }
 };
 #endif
@@ -299,5 +344,22 @@ template <typename T>
 struct NativePackSize : veg::meta::constant<usize, (SIMDE_NATURAL_VECTOR_SIZE / 8) / sizeof(T)> {};
 } // namespace simd
 } // namespace fae
+namespace veg {
+namespace fmt {
+template <typename T, usize N>
+struct Debug<fae::simd::Pack<T, N>> {
+	static void to_string(BufferMut out, Ref<fae::simd::Pack<T, N>> r) {
+		dbg_to(
+				out,
+				ref(Slice<T>{
+						unsafe,
+						from_raw_parts,
+						reinterpret_cast<T const*>(veg::mem::addressof(r.get())),
+						isize{N},
+				}));
+	}
+};
+} // namespace fmt
+} // namespace veg
 
 #endif /* end of include guard FAER_SIMD_HPP_RA2KIJ1TS */

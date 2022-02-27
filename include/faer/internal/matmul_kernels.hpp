@@ -82,6 +82,7 @@ struct Prefetch {
 template <typename T, usize N>
 struct DestUpdateInner {
 	simd::Pack<T, N> const* accum_iter;
+	simd::Pack<T, N> const* factor_pack;
 	T* dest_iter;
 	isize dest_stride_bytes;
 
@@ -89,7 +90,7 @@ struct DestUpdateInner {
 		T* dest_target = _detail::incr(dest_iter, isize(iter) * dest_stride_bytes);
 		simd::Pack<T, N> tmp;
 		tmp.load_unaligned(dest_target);
-		tmp.add(tmp, accum_iter[iter]);
+		tmp.fmadd(simd::Pos{}, simd::Pos{}, *factor_pack, accum_iter[iter], tmp);
 		tmp.store_unaligned(dest_target);
 	}
 };
@@ -97,11 +98,13 @@ struct DestUpdateInner {
 template <typename T, usize N, usize NR>
 struct DestUpdateOuter {
 	simd::Pack<T, N> const* accum;
+	simd::Pack<T, N> const* factor_pack;
 	T* dest;
 	isize dest_stride_bytes;
 	VEG_INLINE void operator()(usize iter) const noexcept {
 		_detail::unroll<NR>(DestUpdateInner<T, N>{
 				accum + NR * iter,
+        factor_pack,
 				dest + N * iter,
 				dest_stride_bytes,
 		});
@@ -114,18 +117,15 @@ namespace simd {
 template <usize MR, usize NR, usize N, usize K_UNROLL = 4, typename T>
 VEG_NO_INLINE void packed_inner_kernel(
 		T* dest,
-		isize dest_stride,
+		isize dest_stride_bytes,
 		T const* packed_lhs,
-		isize lhs_stride,
+		isize lhs_stride_bytes,
 		T const* packed_rhs,
-		isize rhs_stride,
-		usize k) noexcept {
+		isize rhs_stride_bytes,
+		usize k,
+		T const* factor) noexcept {
 
 	using Pack = simd::Pack<T, N>;
-
-	isize lhs_stride_bytes = lhs_stride * isize{sizeof(T)};
-	isize rhs_stride_bytes = rhs_stride * isize{sizeof(T)};
-	isize dest_stride_bytes = dest_stride * isize{sizeof(T)};
 
 	Pack accum[NR * (MR / N)];
 	_detail::unroll<NR*(MR / N)>(_detail::_kernel::ZeroAccum<T, N>{accum});
@@ -184,8 +184,12 @@ VEG_NO_INLINE void packed_inner_kernel(
 			}
 		}
 	}
+
+	simd::Pack<T, N> factor_pack;
+	factor_pack.load_unaligned(factor);
 	_detail::unroll<MR / N>(_detail::_kernel::DestUpdateOuter<T, N, NR>{
 			accum,
+			veg::mem::addressof(factor_pack),
 			dest,
 			dest_stride_bytes,
 	});

@@ -34,6 +34,12 @@ struct MemAccess<Order::ROWMAJOR> {
 		return ptr + (isize(j) + isize(i) * stride);
 	}
 };
+template <typename T>
+auto offset_to_align(T* ptr, usize align) noexcept -> usize {
+	using UPtr = std::uintptr_t;
+	UPtr mask = align - 1;
+	return (((UPtr(ptr) + mask) & ~mask) - UPtr(ptr)) / sizeof(T);
+}
 
 constexpr auto min2(usize a, usize b) noexcept -> usize {
 	return a < b ? a : b;
