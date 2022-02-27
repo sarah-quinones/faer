@@ -23,8 +23,8 @@ auto random_vec(usize k) {
 
 constexpr usize N = 4;
 
-usize m = 4911;
-usize k = 4219;
+usize m = 4097;
+usize k = 4096;
 
 template <typename T>
 void bm_eigen(benchmark::State& s) {
@@ -35,7 +35,7 @@ void bm_eigen(benchmark::State& s) {
 	dest.setZero();
 
 	for (auto _ : s) {
-		dest.tail(m - 1).noalias() += 1.0 * lhs.bottomRows(m - 1) * rhs;
+		dest.noalias() += 2.0 * lhs * rhs;
 	}
 	veg::dbg(dest.norm());
 }
@@ -49,12 +49,13 @@ void bm_faer_(benchmark::State& s) {
 
 	for (auto _ : s) {
 		_detail::matvec_large_vectorized<Order::COLMAJOR, N>( //
-				m - 1,
+				m,
 				k,
-				dest.tail(m - 1).data(),
-				lhs.bottomRows(m - 1).data(),
+				dest.data(),
+				lhs.data(),
 				rhs.data(),
-				lhs.outerStride());
+				lhs.outerStride(),
+				2);
 	}
 	veg::dbg(dest.norm());
 }

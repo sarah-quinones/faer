@@ -220,7 +220,7 @@ void matvec_large_vectorized( //
 		T const* lhs,
 		T const* rhs,
 		isize lhs_stride,
-		T const factor) noexcept {
+		veg::DoNotDeduce<T> const factor) noexcept {
 	_matvec::MatVecVectorizedImpl<LHS>::template fn<N, T>(m, k, dest, lhs, rhs, lhs_stride, factor);
 }
 
