@@ -18,7 +18,7 @@ add_library(
 if((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL
                                                 "GNU")
 )
-  target_compile_options(faer PUBLIC -march=native)
+  target_compile_options(faer PUBLIC)
 endif()
 
 target_include_directories(faer PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

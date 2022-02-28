@@ -44,6 +44,8 @@ struct KernelIterLoadRhsFma {
 
 template <typename T, usize N, usize MR, usize NR>
 struct KernelIter {
+	static constexpr usize RHS_REG_COUNT = 1;
+
 	T const* packed_lhs;
 	isize lhs_stride_bytes;
 	T const* packed_rhs;
@@ -58,6 +60,51 @@ struct KernelIter {
 				lhs,
 		});
 		_detail::unroll<NR>(KernelIterLoadRhsFma<T, N, MR>{
+				_detail::incr(packed_rhs, isize(iter) * rhs_stride_bytes),
+				accum,
+				lhs,
+				rhs,
+				NR,
+		});
+	}
+};
+
+template <typename T, usize N>
+struct ManyRegLoadRhs {
+	T const* packed_rhs_iter;
+	simd::Pack<T, N>* rhs;
+	VEG_INLINE void operator()(usize iter) const noexcept { rhs[iter].broadcast(packed_rhs_iter + iter); }
+};
+template <typename T, usize N, usize MR>
+struct ManyRegKernelIterFmaOuter {
+	T const* packed_rhs_iter;
+	simd::Pack<T, N>* accum;
+	simd::Pack<T, N> const* lhs;
+	simd::Pack<T, N> const* rhs;
+	usize nr;
+	VEG_INLINE void operator()(usize iter) const noexcept {
+		_detail::unroll<MR / N>(KernelIterFma<T, N>{accum + iter, lhs, rhs + iter, nr});
+	}
+};
+template <typename T, usize N, usize MR, usize NR>
+struct ManyRegKernelIter {
+	static constexpr usize RHS_REG_COUNT = NR;
+
+	T const* packed_lhs;
+	isize lhs_stride_bytes;
+	T const* packed_rhs;
+	isize rhs_stride_bytes;
+	simd::Pack<T, N>* accum;
+	simd::Pack<T, N>* lhs;
+	simd::Pack<T, N>* rhs;
+
+	VEG_INLINE void operator()(usize iter) const noexcept {
+		_detail::unroll<MR / N>(KernelIterLoadLhs<T, N>{
+				_detail::incr(packed_lhs, isize(iter) * lhs_stride_bytes),
+				lhs,
+		});
+		_detail::unroll<NR>(ManyRegLoadRhs<T, N>{packed_rhs + NR * iter, rhs});
+		_detail::unroll<NR>(ManyRegKernelIterFmaOuter<T, N, MR>{
 				_detail::incr(packed_rhs, isize(iter) * rhs_stride_bytes),
 				accum,
 				lhs,
@@ -104,7 +151,7 @@ struct DestUpdateOuter {
 	VEG_INLINE void operator()(usize iter) const noexcept {
 		_detail::unroll<NR>(DestUpdateInner<T, N>{
 				accum + NR * iter,
-        factor_pack,
+				factor_pack,
 				dest + N * iter,
 				dest_stride_bytes,
 		});
@@ -124,6 +171,14 @@ VEG_NO_INLINE void packed_inner_kernel(
 		isize rhs_stride_bytes,
 		usize k,
 		T const* factor) noexcept {
+	simde_mm_prefetch(packed_rhs, SIMDE_MM_HINT_T0);
+	simde_mm_prefetch(packed_lhs, SIMDE_MM_HINT_T0);
+	simde_mm_prefetch(dest + dest_stride_bytes * 0, SIMDE_MM_HINT_T0);
+	simde_mm_prefetch(dest + dest_stride_bytes * 1, SIMDE_MM_HINT_T0);
+	simde_mm_prefetch(dest + dest_stride_bytes * 2, SIMDE_MM_HINT_T0);
+	simde_mm_prefetch(dest + dest_stride_bytes * 3, SIMDE_MM_HINT_T0);
+
+	using KernelIter = _detail::_kernel::ManyRegKernelIter<T, N, MR, NR>;
 
 	using Pack = simd::Pack<T, N>;
 
@@ -131,7 +186,7 @@ VEG_NO_INLINE void packed_inner_kernel(
 	_detail::unroll<NR*(MR / N)>(_detail::_kernel::ZeroAccum<T, N>{accum});
 
 	Pack lhs[MR / N];
-	Pack rhs;
+	Pack rhs[KernelIter::RHS_REG_COUNT];
 
 	usize k_unroll = k / K_UNROLL;
 	usize k_leftover = k % K_UNROLL;
@@ -140,14 +195,14 @@ VEG_NO_INLINE void packed_inner_kernel(
 	if (depth != 0) {
 		FAER_NO_UNROLL
 		while (true) {
-			_detail::unroll<K_UNROLL>(_detail::_kernel::KernelIter<T, N, MR, NR>{
+			_detail::unroll<K_UNROLL>(KernelIter{
 					packed_lhs,
 					lhs_stride_bytes,
 					packed_rhs,
 					rhs_stride_bytes,
 					accum,
 					lhs,
-					&rhs,
+					rhs,
 			});
 
 			packed_lhs = _detail::incr(packed_lhs, isize{K_UNROLL} * lhs_stride_bytes);
@@ -165,14 +220,14 @@ VEG_NO_INLINE void packed_inner_kernel(
 		if (depth != 0) {
 			FAER_NO_UNROLL
 			while (true) {
-				_detail::unroll<1>(_detail::_kernel::KernelIter<T, N, MR, NR>{
+				_detail::unroll<1>(KernelIter{
 						packed_lhs,
 						lhs_stride_bytes,
 						packed_rhs,
 						rhs_stride_bytes,
 						accum,
 						lhs,
-						&rhs,
+						rhs,
 				});
 				packed_lhs = _detail::incr(packed_lhs, lhs_stride_bytes);
 				packed_rhs = _detail::incr(packed_rhs, rhs_stride_bytes);

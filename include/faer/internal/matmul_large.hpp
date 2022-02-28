@@ -22,7 +22,7 @@ auto matmul_large_vectorized_req( //
 	auto mc = params.mc;
 	auto nc = params.nc;
 	isize simd_alignment = isize(N * sizeof(T));
-	return veg::dynstack::StackReq{isize(mc) * isize(kc) * isize{sizeof(T)}, simd_alignment} &
+	return veg::dynstack::StackReq{(1U << 25U) + isize(mc) * isize(kc) * isize{sizeof(T)}, simd_alignment} &
 	       veg::dynstack::StackReq{isize(nc) * isize(kc) * isize{sizeof(T)}, simd_alignment};
 }
 
@@ -38,6 +38,7 @@ FAER_MINSIZE void matmul_large_vectorized( //
 		isize dest_stride,
 		isize lhs_stride,
 		isize rhs_stride,
+		veg::DoNotDeduce<T> factor,
 		veg::dynstack::DynStackMut stack) noexcept {
 	KernelParams params = kernel_params<MR, NR, sizeof(T)>();
 	auto kc = params.kc;
@@ -49,18 +50,27 @@ FAER_MINSIZE void matmul_large_vectorized( //
 	VEG_ASSERT(m % MR == 0);
 	VEG_ASSERT(n % NR == 0);
 
+	simd::Pack<T, N> factor_pack;
+	factor_pack.broadcast(veg::mem::addressof(factor));
+
 	isize simd_alignment = isize(N * sizeof(T));
+	auto packed_rhs_stride = isize(kc * NR);
+	auto packed_lhs_stride = isize(kc * MR);
+
+	auto _packed_rhs =
+			stack.make_new_for_overwrite(veg::Tag<T>{}, packed_rhs_stride * isize(nc / NR), simd_alignment).unwrap();
+	auto _packed_lhs =
+			stack.make_new_for_overwrite(veg::Tag<T>{}, packed_lhs_stride * isize(mc / MR), simd_alignment).unwrap();
 
 	usize col_outer = 0;
+	FAER_NO_UNROLL
 	while (col_outer != n) {
 		usize n_chunk = _detail::min2(nc, n - col_outer);
 		usize depth_outer = 0;
+		FAER_NO_UNROLL
 		while (depth_outer != k) {
 			usize k_chunk = _detail::min2(kc, k - depth_outer);
 
-			auto packed_rhs_stride = isize(kc * NR);
-			auto _packed_rhs =
-					stack.make_new_for_overwrite(veg::Tag<T>{}, packed_rhs_stride * isize(nc / NR), simd_alignment).unwrap();
 			auto packed_rhs = _packed_rhs.ptr_mut();
 
 			PackOperand<false, RHS == Order::COLMAJOR>::template fn<N, NR, T>( //
@@ -72,12 +82,10 @@ FAER_MINSIZE void matmul_large_vectorized( //
 					k_chunk);
 
 			usize row_outer = 0;
+			FAER_NO_UNROLL
 			while (row_outer != m) {
 				usize m_chunk = min2(mc, m - row_outer);
 
-				auto packed_lhs_stride = isize(kc * MR);
-				auto _packed_lhs =
-						stack.make_new_for_overwrite(veg::Tag<T>{}, packed_lhs_stride * isize(mc / MR), simd_alignment).unwrap();
 				auto packed_lhs = _packed_lhs.ptr_mut();
 				PackOperand<true, LHS == Order::COLMAJOR>::template fn<N, MR, T>( //
 						packed_lhs,
@@ -96,7 +104,8 @@ FAER_MINSIZE void matmul_large_vectorized( //
 								MR * isize{sizeof(T)},
 								packed_rhs + col_inner * kc,
 								NR * isize{sizeof(T)},
-								k_chunk);
+								k_chunk,
+								reinterpret_cast<T const*>(veg::mem::addressof(factor_pack)));
 					}
 				}
 

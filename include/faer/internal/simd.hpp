@@ -10,6 +10,7 @@
 #endif
 
 #include <veg/util/assert.hpp>
+#include <veg/slice.hpp>
 
 namespace fae {
 using veg::usize;
@@ -163,6 +164,7 @@ struct Pack<f32, 8> {
 		simde__m256 T5 = simde_mm256_unpackhi_ps(p[4]._, p[5]._);
 		simde__m256 T6 = simde_mm256_unpacklo_ps(p[6]._, p[7]._);
 		simde__m256 T7 = simde_mm256_unpackhi_ps(p[6]._, p[7]._);
+
 		simde__m256 S0 = simde_mm256_shuffle_ps(T0, T2, SIMDE_MM_SHUFFLE /* NOLINT */ (1, 0, 1, 0));
 		simde__m256 S1 = simde_mm256_shuffle_ps(T0, T2, SIMDE_MM_SHUFFLE /* NOLINT */ (3, 2, 3, 2));
 		simde__m256 S2 = simde_mm256_shuffle_ps(T1, T3, SIMDE_MM_SHUFFLE /* NOLINT */ (1, 0, 1, 0));
@@ -171,14 +173,15 @@ struct Pack<f32, 8> {
 		simde__m256 S5 = simde_mm256_shuffle_ps(T4, T6, SIMDE_MM_SHUFFLE /* NOLINT */ (3, 2, 3, 2));
 		simde__m256 S6 = simde_mm256_shuffle_ps(T5, T7, SIMDE_MM_SHUFFLE /* NOLINT */ (1, 0, 1, 0));
 		simde__m256 S7 = simde_mm256_shuffle_ps(T5, T7, SIMDE_MM_SHUFFLE /* NOLINT */ (3, 2, 3, 2));
-		p[0]._ = _mm256_permute2f128_ps(S0, S4, 0x20);
-		p[1]._ = _mm256_permute2f128_ps(S1, S5, 0x20);
-		p[2]._ = _mm256_permute2f128_ps(S2, S6, 0x20);
-		p[3]._ = _mm256_permute2f128_ps(S3, S7, 0x20);
-		p[4]._ = _mm256_permute2f128_ps(S0, S4, 0x31);
-		p[5]._ = _mm256_permute2f128_ps(S1, S5, 0x31);
-		p[6]._ = _mm256_permute2f128_ps(S2, S6, 0x31);
-		p[7]._ = _mm256_permute2f128_ps(S3, S7, 0x31);
+
+		p[0]._ = simde_mm256_permute2f128_ps(S0, S4, 0x20);
+		p[1]._ = simde_mm256_permute2f128_ps(S1, S5, 0x20);
+		p[2]._ = simde_mm256_permute2f128_ps(S2, S6, 0x20);
+		p[3]._ = simde_mm256_permute2f128_ps(S3, S7, 0x20);
+		p[4]._ = simde_mm256_permute2f128_ps(S0, S4, 0x31);
+		p[5]._ = simde_mm256_permute2f128_ps(S1, S5, 0x31);
+		p[6]._ = simde_mm256_permute2f128_ps(S2, S6, 0x31);
+		p[7]._ = simde_mm256_permute2f128_ps(S3, S7, 0x31);
 	}
 };
 #ifdef __AVX512F__
@@ -297,15 +300,15 @@ struct Pack<f64, 4> {
 		return lo.horizontal_add();
 	}
 	VEG_INLINE static void trans(Pack* p) noexcept {
-		simde__m256d T0 = simde_mm256_shuffle_pd(p[0]._, p[1]._, 0xF);
-		simde__m256d T1 = simde_mm256_shuffle_pd(p[0]._, p[1]._, 0x0);
-		simde__m256d T2 = simde_mm256_shuffle_pd(p[2]._, p[3]._, 0xF);
-		simde__m256d T3 = simde_mm256_shuffle_pd(p[2]._, p[3]._, 0x0);
+		simde__m256d T0 = simde_mm256_shuffle_pd(p[0]._, p[1]._, 0x0);
+		simde__m256d T1 = simde_mm256_shuffle_pd(p[0]._, p[1]._, 0xF);
+		simde__m256d T2 = simde_mm256_shuffle_pd(p[2]._, p[3]._, 0x0);
+		simde__m256d T3 = simde_mm256_shuffle_pd(p[2]._, p[3]._, 0xF);
 
-		p[1]._ = simde_mm256_permute2f128_pd(T0, T2, 0x20);
-		p[3]._ = simde_mm256_permute2f128_pd(T0, T2, 0x31);
-		p[0]._ = simde_mm256_permute2f128_pd(T1, T3, 0x20);
-		p[2]._ = simde_mm256_permute2f128_pd(T1, T3, 0x31);
+		p[0]._ = simde_mm256_permute2f128_pd(T0, T2, 0x20);
+		p[2]._ = simde_mm256_permute2f128_pd(T0, T2, 0x31);
+		p[1]._ = simde_mm256_permute2f128_pd(T1, T3, 0x20);
+		p[3]._ = simde_mm256_permute2f128_pd(T1, T3, 0x31);
 	}
 };
 #ifdef __AVX512F__
@@ -336,7 +339,34 @@ struct Pack<f64, 8> {
 		lo.add(lo, hi);
 		return lo.horizontal_add();
 	}
-	VEG_INLINE static void trans(Pack* /*p*/) noexcept { VEG_UNIMPLEMENTED(); }
+	VEG_INLINE static void trans(Pack* p) noexcept {
+		__m512 T0 = _mm512_unpacklo_pd(p[0]._, p[1]._);
+		__m512 T1 = _mm512_unpackhi_pd(p[0]._, p[1]._);
+		__m512 T2 = _mm512_unpacklo_pd(p[2]._, p[3]._);
+		__m512 T3 = _mm512_unpackhi_pd(p[2]._, p[3]._);
+		__m512 T4 = _mm512_unpacklo_pd(p[4]._, p[5]._);
+		__m512 T5 = _mm512_unpackhi_pd(p[4]._, p[5]._);
+		__m512 T6 = _mm512_unpacklo_pd(p[6]._, p[7]._);
+		__m512 T7 = _mm512_unpackhi_pd(p[6]._, p[7]._);
+
+		__m512 S0 = _mm512_shuffle_f64x2(T0, T2, 0x88);
+		__m512 S1 = _mm512_shuffle_f64x2(T0, T2, 0xdd);
+		__m512 S2 = _mm512_shuffle_f64x2(T1, T3, 0x88);
+		__m512 S3 = _mm512_shuffle_f64x2(T1, T3, 0xdd);
+		__m512 S4 = _mm512_shuffle_f64x2(T4, T6, 0x88);
+		__m512 S5 = _mm512_shuffle_f64x2(T4, T6, 0xdd);
+		__m512 S6 = _mm512_shuffle_f64x2(T5, T7, 0x88);
+		__m512 S7 = _mm512_shuffle_f64x2(T5, T7, 0xdd);
+
+		p[0]._ = _mm512_shuffle_f64x2(S0, S4, 0x88);
+		p[2]._ = _mm512_shuffle_f64x2(S1, S5, 0x88);
+		p[1]._ = _mm512_shuffle_f64x2(S2, S6, 0x88);
+		p[3]._ = _mm512_shuffle_f64x2(S3, S7, 0x88);
+		p[4]._ = _mm512_shuffle_f64x2(S0, S4, 0xdd);
+		p[6]._ = _mm512_shuffle_f64x2(S1, S5, 0xdd);
+		p[5]._ = _mm512_shuffle_f64x2(S2, S6, 0xdd);
+		p[7]._ = _mm512_shuffle_f64x2(S3, S7, 0xdd);
+	}
 };
 #endif
 

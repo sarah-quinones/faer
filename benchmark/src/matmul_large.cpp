@@ -1,7 +1,7 @@
 #include <benchmark/benchmark.h>
+#include <veg/vec.hpp>
 #include <Eigen/Core>
 #include <faer/internal/matmul_large.hpp>
-#include <veg/vec.hpp>
 #include <iostream>
 
 using namespace fae;
@@ -9,20 +9,22 @@ using namespace fae;
 template <typename T>
 auto random_mat(usize m, usize n) {
 	auto mat = Eigen::Matrix<T, -1, -1>(long(m), long(n));
-	std::srand(0); // NOLINT
-	mat.setRandom();
+  int i = 0;
+  for (usize c = 0; c < m * n; ++c) {
+    mat.data()[c] = i;
+    ++i;
+  }
 	return mat;
 }
-constexpr usize N = 4;
-constexpr usize MR = 12;
+constexpr usize N = 8;
+constexpr usize MR = 3 * N;
 constexpr usize NR = 4;
-
-usize m = _detail::round_up(4096, MR);
-usize n = _detail::round_up(4096, NR);
-usize k = 4096;
 
 template <typename T>
 void bm_eigen(benchmark::State& s) {
+	usize m = usize(s.range(0));
+	usize n = usize(s.range(1));
+	usize k = usize(s.range(2));
 
 	auto lhs = random_mat<T>(m, k);
 	auto rhs = random_mat<T>(k, n);
@@ -37,6 +39,9 @@ void bm_eigen(benchmark::State& s) {
 
 template <typename T>
 void bm_faer_(benchmark::State& s) {
+	usize m = usize(s.range(0));
+	usize n = usize(s.range(1));
+	usize k = usize(s.range(2));
 	auto lhs = random_mat<T>(m, k);
 	auto rhs = random_mat<T>(k, n);
 	Eigen::Matrix<T, -1, -1> dest(m, n);
@@ -57,11 +62,18 @@ void bm_faer_(benchmark::State& s) {
 				dest.outerStride(),
 				lhs.outerStride(),
 				rhs.outerStride(),
+				1,
 				stack);
 	}
 	std::cout << dest.norm() << '\n';
 }
 
-BENCHMARK_TEMPLATE(bm_faer_, f64);
-BENCHMARK_TEMPLATE(bm_eigen, f64);
+void make_args(benchmark::internal::Benchmark* b) noexcept {
+	using _detail::round_up;
+	b->Args({round_up(4096, MR), round_up(1024, MR), 4096});
+	b->Args({round_up(1024, MR), round_up(4096, MR), 4096});
+}
+
+BENCHMARK_TEMPLATE(bm_eigen, f64)->Apply(make_args);
+BENCHMARK_TEMPLATE(bm_faer_, f64)->Apply(make_args);
 BENCHMARK_MAIN();

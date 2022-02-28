@@ -125,8 +125,8 @@ auto kernel_params_impl(usize mr, usize nr, usize sizeof_T) noexcept -> KernelPa
 	usize rhs_l2_assoc = div_up(rhs_micropanel_bytes, l2_cache_bytes / l2_assoc);
 	usize lhs_l2_assoc = (l2_assoc - 1 - rhs_l2_assoc);
 
-	// usize auto_mc = round_down(mc_from_lhs_l2_assoc(lhs_l2_assoc, l2_cache_bytes, l2_assoc, auto_kc), mr);
-	usize auto_mc = round_down(mc_from_lhs_l2_assoc(lhs_l2_assoc - 1, l2_cache_bytes, l2_assoc, auto_kc), mr);
+	usize auto_mc = round_down(mc_from_lhs_l2_assoc(lhs_l2_assoc, l2_cache_bytes, l2_assoc, auto_kc), mr);
+	// usize auto_mc = round_down(mc_from_lhs_l2_assoc(lhs_l2_assoc - 1, l2_cache_bytes, l2_assoc, auto_kc), mr);
 	// usize auto_mc = round_down(mc_from_lhs_l2_assoc(l2_assoc / 2, l2_cache_bytes, l2_assoc, auto_kc), mr);
 
 	// l3 cache must hold
