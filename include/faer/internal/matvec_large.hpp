@@ -59,32 +59,17 @@ struct MatVecVectorizedImpl<Order::COLMAJOR> {
 							k_chunk,
 							reinterpret_cast<T const*>(veg::mem::addressof(factor_pack)));
 				}
-				if (row < aligned_start + _detail::round_down(aligned_count, 4 * N)) {
-					simd::packed_inner_kernel<4 * N, 1, N, 4, T>( //
-							dest + row,
-							0,
-							lhs_ptr + row,
-							lhs_stride_bytes,
-							rhs_ptr,
-							1 * isize{sizeof(T)},
-							k_chunk,
-							reinterpret_cast<T const*>(veg::mem::addressof(factor_pack)));
-					row += 4 * N;
-				}
-				if (row < aligned_start + _detail::round_down(aligned_count, 2 * N)) {
-					simd::packed_inner_kernel<2 * N, 1, N, 4, T>( //
-							dest + row,
-							0,
-							lhs_ptr + row,
-							lhs_stride_bytes,
-							rhs_ptr,
-							1 * isize{sizeof(T)},
-							k_chunk,
-							reinterpret_cast<T const*>(veg::mem::addressof(factor_pack)));
-					row += 2 * N;
-				}
-				if (row < aligned_end) {
-					simd::packed_inner_kernel<N, 1, N, 4, T>( //
+				constexpr void (*fn_ptrs[])(T*, isize, T const*, isize, T const*, isize, usize, T const*) noexcept = {
+						&simd::packed_inner_kernel<1 * N, 1, N, 4, T>,
+						&simd::packed_inner_kernel<2 * N, 1, N, 4, T>,
+						&simd::packed_inner_kernel<3 * N, 1, N, 4, T>,
+						&simd::packed_inner_kernel<4 * N, 1, N, 4, T>,
+						&simd::packed_inner_kernel<5 * N, 1, N, 4, T>,
+						&simd::packed_inner_kernel<6 * N, 1, N, 4, T>,
+						&simd::packed_inner_kernel<7 * N, 1, N, 4, T>,
+				};
+				if (row != aligned_end) {
+					(*fn_ptrs[(aligned_end - row) / N - 1])( //
 							dest + row,
 							0,
 							lhs_ptr + row,
